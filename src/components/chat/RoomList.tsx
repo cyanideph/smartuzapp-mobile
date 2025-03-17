@@ -11,10 +11,12 @@ interface ChatRoom {
   id: string;
   name: string;
   participants?: number;
-  category?: string;
-  region?: string;
-  province?: string;
-  description?: string;
+  category?: string | null;
+  region?: string | null;
+  province?: string | null;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const regionTitles = {
@@ -38,7 +40,6 @@ const regionTitles = {
   'Other': 'Other Categories'
 };
 
-// Get all regions in order
 const allRegions = Object.keys(regionTitles);
 
 const RoomList: React.FC = () => {
@@ -50,29 +51,23 @@ const RoomList: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Group rooms by region
   const groupRoomsByRegion = (roomsList: ChatRoom[]) => {
     const grouped: Record<string, ChatRoom[]> = {};
     
-    // Initialize all regions with empty arrays
     allRegions.forEach(region => {
       grouped[region] = [];
     });
     
-    // Ensure 'Other' category exists
     if (!grouped['Other']) {
       grouped['Other'] = [];
     }
     
-    // Group rooms by region
     roomsList.forEach(room => {
-      // Check if room has a valid Philippine region
       const roomRegion = room.region || '';
       
       if (roomRegion && allRegions.includes(roomRegion)) {
         grouped[roomRegion].push(room);
       } else {
-        // Handle rooms with categories like "Games" that aren't Philippine regions
         grouped['Other'].push(room);
       }
     });
@@ -80,7 +75,6 @@ const RoomList: React.FC = () => {
     return grouped;
   };
 
-  // Toggle region expansion
   const toggleRegion = (region: string) => {
     setExpandedRegions(prev => ({
       ...prev,
@@ -88,7 +82,6 @@ const RoomList: React.FC = () => {
     }));
   };
 
-  // Fetch chat rooms from Supabase
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -102,7 +95,6 @@ const RoomList: React.FC = () => {
           throw error;
         }
         
-        // Add random participants count for demo
         const roomsWithParticipants = data.map(room => ({
           ...room,
           participants: Math.floor(Math.random() * 50) + 1
@@ -110,16 +102,14 @@ const RoomList: React.FC = () => {
         
         console.log('Original rooms data:', roomsWithParticipants);
         
-        // Demo data for Philippine regions if no proper region rooms exist
         let hasPhilippineRegions = roomsWithParticipants.some(room => 
           room.region && allRegions.includes(room.region) && room.region !== 'Other'
         );
         
-        // If no rooms have Philippine regions, create sample rooms for NCR and CAR
         if (!hasPhilippineRegions && roomsWithParticipants.length > 0) {
           console.log('No Philippine regions found, creating sample rooms');
           
-          // Add sample Philippine regional rooms
+          const timestamp = new Date().toISOString();
           const sampleRegionalRooms = [
             {
               id: `sample-ncr-${Date.now()}`,
@@ -127,7 +117,10 @@ const RoomList: React.FC = () => {
               participants: Math.floor(Math.random() * 50) + 1,
               region: 'NCR',
               province: 'Manila',
-              description: 'Chat room for National Capital Region'
+              description: 'Chat room for National Capital Region',
+              category: 'NCR - Manila',
+              created_at: timestamp,
+              updated_at: timestamp
             },
             {
               id: `sample-car-${Date.now()}`,
@@ -135,7 +128,10 @@ const RoomList: React.FC = () => {
               participants: Math.floor(Math.random() * 50) + 1,
               region: 'CAR',
               province: 'Benguet',
-              description: 'Chat room for Cordillera Administrative Region'
+              description: 'Chat room for Cordillera Administrative Region',
+              category: 'CAR - Benguet',
+              created_at: timestamp,
+              updated_at: timestamp
             }
           ];
           
@@ -145,15 +141,12 @@ const RoomList: React.FC = () => {
         setRooms(roomsWithParticipants);
         setFilteredRooms(roomsWithParticipants);
         
-        // Initialize expanded state for all regions
         const initialExpandedState: Record<string, boolean> = {};
         allRegions.forEach(region => {
-          // Auto-expand regions that have rooms
           const hasRoomsInRegion = roomsWithParticipants.some(room => room.region === region);
           initialExpandedState[region] = hasRoomsInRegion;
         });
         
-        // Always auto-expand the "Other" category
         initialExpandedState['Other'] = true;
         
         setExpandedRegions(initialExpandedState);
@@ -167,7 +160,7 @@ const RoomList: React.FC = () => {
           variant: 'destructive',
         });
         
-        // Fallback to sample data if database fetch fails
+        const timestamp = new Date().toISOString();
         const sampleRooms: ChatRoom[] = [
           {
             id: `sample-ncr-${Date.now()}`,
@@ -175,7 +168,10 @@ const RoomList: React.FC = () => {
             participants: Math.floor(Math.random() * 50) + 1,
             region: 'NCR',
             province: 'Manila',
-            description: 'Chat room for National Capital Region'
+            description: 'Chat room for National Capital Region',
+            category: 'NCR - Manila',
+            created_at: timestamp,
+            updated_at: timestamp
           },
           {
             id: `sample-car-${Date.now()}`,
@@ -183,7 +179,10 @@ const RoomList: React.FC = () => {
             participants: Math.floor(Math.random() * 50) + 1,
             region: 'CAR',
             province: 'Benguet',
-            description: 'Chat room for Cordillera Administrative Region'
+            description: 'Chat room for Cordillera Administrative Region',
+            category: 'CAR - Benguet',
+            created_at: timestamp,
+            updated_at: timestamp
           }
         ];
         setRooms(sampleRooms);
@@ -228,9 +227,7 @@ const RoomList: React.FC = () => {
 
   const groupedRooms = groupRoomsByRegion(filteredRooms);
 
-  // Check if we have any rooms to display
   const hasRooms = rooms.length > 0;
-  // Check if any rooms are shown after filtering and grouping
   const hasVisibleRooms = Object.values(groupedRooms).some(group => group.length > 0);
 
   return (
@@ -317,3 +314,4 @@ const RoomList: React.FC = () => {
 };
 
 export default RoomList;
+
