@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ChevronDown, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import RoomItem from './RoomItem';
 import { ChatRoom, regionTitles } from '@/types/chatRoom';
+import { Badge } from '@/components/ui/tabs';
 
 interface RegionGroupProps {
   region: string;
@@ -23,11 +24,13 @@ const RegionGroup: React.FC<RegionGroupProps> = ({
   if (rooms.length === 0) return null;
   
   const container = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, height: 0 },
     show: { 
       opacity: 1,
+      height: 'auto',
       transition: {
-        staggerChildren: 0.05
+        staggerChildren: 0.05,
+        height: { duration: 0.3 }
       }
     }
   };
@@ -38,32 +41,41 @@ const RegionGroup: React.FC<RegionGroupProps> = ({
   };
 
   return (
-    <div className="mb-2">
-      <div 
-        onClick={onToggle}
+    <div className="mb-3 overflow-hidden">
+      <motion.div 
         className="flex items-center p-2 bg-gray-100 dark:bg-gray-800 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+        onClick={onToggle}
+        whileTap={{ scale: 0.98 }}
       >
         <ChevronDown 
-          className={`h-4 w-4 mr-2 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} 
+          className={`h-4 w-4 mr-2 transition-transform duration-300 ${isExpanded ? 'rotate-0' : '-rotate-90'}`} 
         />
-        <span className="font-semibold text-sm">{regionTitles[region as keyof typeof regionTitles] || region}</span>
-        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({rooms.length})</span>
-      </div>
+        <div className="flex items-center">
+          <MapPin className="h-4 w-4 mr-1 text-uzzap-green" />
+          <span className="font-semibold text-sm">{regionTitles[region as keyof typeof regionTitles] || region}</span>
+        </div>
+        <Badge variant="outline" className="ml-2 bg-gray-200 dark:bg-gray-700 text-xs">
+          {rooms.length}
+        </Badge>
+      </motion.div>
       
-      {isExpanded && (
-        <motion.div 
-          className="pl-6 mt-1 space-y-1"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          {rooms.map((room) => (
-            <motion.div key={room.id} variants={item}>
-              <RoomItem room={room} onClick={onRoomClick} />
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div 
+            className="pl-6 mt-1 space-y-2"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            exit="hidden"
+          >
+            {rooms.map((room) => (
+              <motion.div key={room.id} variants={item}>
+                <RoomItem room={room} onClick={onRoomClick} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
