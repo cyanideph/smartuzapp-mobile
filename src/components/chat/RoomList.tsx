@@ -6,19 +6,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface ChatRoom {
   id: string;
   name: string;
   participants?: number;
   category?: string;
+  region?: string;
+  province?: string;
   description?: string;
 }
 
@@ -65,12 +61,11 @@ const RoomList: React.FC = () => {
     
     // Group rooms by region
     roomsList.forEach(room => {
-      // Extract region from category
-      const category = room.category || '';
-      const region = category.split(' - ')[0];
+      // Use the region field directly if available, otherwise extract from category
+      const roomRegion = room.region || (room.category ? room.category.split(' - ')[0] : '');
       
-      if (region && allRegions.includes(region)) {
-        grouped[region].push(room);
+      if (roomRegion && allRegions.includes(roomRegion)) {
+        grouped[roomRegion].push(room);
       } else {
         // Handle rooms with no region or invalid region
         if (!grouped['Other']) {
@@ -133,7 +128,7 @@ const RoomList: React.FC = () => {
           id: `room-${i + 1}`,
           name: `Gamers ${i + 1}`,
           participants: Math.floor(Math.random() * 50) + 1,
-          category: 'NCR',
+          region: 'NCR',
         }));
         setRooms(sampleRooms);
         setFilteredRooms(sampleRooms);
@@ -229,6 +224,9 @@ const RoomList: React.FC = () => {
                           <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-uzzap-green mr-2 animate-pulse-light"></div>
                             <span className="font-medium dark:text-white">{room.name}</span>
+                            {room.province && (
+                              <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({room.province})</span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             ({room.participants})

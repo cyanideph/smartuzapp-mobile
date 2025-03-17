@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -87,6 +85,7 @@ const CreateChatRoom: React.FC = () => {
       return;
     }
 
+    // We'll still set category for backward compatibility, but now also set region and province
     const category = province ? `${region} - ${province}` : region;
     
     setIsLoading(true);
@@ -94,7 +93,13 @@ const CreateChatRoom: React.FC = () => {
       const { data, error } = await supabase
         .from('chat_rooms')
         .insert([
-          { name, description, category }
+          { 
+            name, 
+            description, 
+            category,
+            region,
+            province 
+          }
         ])
         .select();
       
