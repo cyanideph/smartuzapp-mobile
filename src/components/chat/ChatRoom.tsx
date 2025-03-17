@@ -48,7 +48,7 @@ const ChatRoom: React.FC = () => {
       {
         id: '2',
         sender: 'GameMaster42',
-        text: 'Hey everyone! Who's playing the new release?',
+        text: "Hey everyone! Who's playing the new release?",
         timestamp: new Date(Date.now() - 60000 * 10),
         isCurrentUser: false,
       },
