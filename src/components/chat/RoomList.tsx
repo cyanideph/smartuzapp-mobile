@@ -6,6 +6,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface ChatRoom {
   id: string;
@@ -15,13 +22,74 @@ interface ChatRoom {
   description?: string;
 }
 
+const regionTitles = {
+  'NCR': '1. National Capital Region (NCR)',
+  'CAR': '2. Cordillera Administrative Region (CAR)',
+  'Region I': '3. Ilocos Region (Region I)',
+  'Region II': '4. Cagayan Valley (Region II)',
+  'Region III': '5. Central Luzon (Region III)',
+  'Region IV-A': '6. CALABARZON (Region IV-A)',
+  'Region IV-B': '7. MIMAROPA (Region IV-B)',
+  'Region V': '8. Bicol Region (Region V)',
+  'Region VI': '9. Western Visayas (Region VI)',
+  'Region VII': '10. Central Visayas (Region VII)',
+  'Region VIII': '11. Eastern Visayas (Region VIII)',
+  'Region IX': '12. Zamboanga Peninsula (Region IX)',
+  'Region X': '13. Northern Mindanao (Region X)',
+  'Region XI': '14. Davao Region (Region XI)',
+  'Region XII': '15. SOCCSKSARGEN (Region XII)',
+  'Region XIII': '16. Caraga (Region XIII)',
+  'BARMM': '17. Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'
+};
+
+// Get all regions in order
+const allRegions = Object.keys(regionTitles);
+
 const RoomList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedRegions, setExpandedRegions] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Group rooms by region
+  const groupRoomsByRegion = (roomsList: ChatRoom[]) => {
+    const grouped: Record<string, ChatRoom[]> = {};
+    
+    // Initialize all regions with empty arrays
+    allRegions.forEach(region => {
+      grouped[region] = [];
+    });
+    
+    // Group rooms by region
+    roomsList.forEach(room => {
+      // Extract region from category
+      const category = room.category || '';
+      const region = category.split(' - ')[0];
+      
+      if (region && allRegions.includes(region)) {
+        grouped[region].push(room);
+      } else {
+        // Handle rooms with no region or invalid region
+        if (!grouped['Other']) {
+          grouped['Other'] = [];
+        }
+        grouped['Other'].push(room);
+      }
+    });
+    
+    return grouped;
+  };
+
+  // Toggle region expansion
+  const toggleRegion = (region: string) => {
+    setExpandedRegions(prev => ({
+      ...prev,
+      [region]: !prev[region]
+    }));
+  };
 
   // Fetch chat rooms from Supabase
   useEffect(() => {
@@ -45,6 +113,13 @@ const RoomList: React.FC = () => {
         
         setRooms(roomsWithParticipants);
         setFilteredRooms(roomsWithParticipants);
+        
+        // Initialize expanded state for all regions
+        const initialExpandedState: Record<string, boolean> = {};
+        allRegions.forEach(region => {
+          initialExpandedState[region] = false;
+        });
+        setExpandedRegions(initialExpandedState);
       } catch (error) {
         console.error('Error fetching rooms:', error);
         toast({
@@ -58,7 +133,7 @@ const RoomList: React.FC = () => {
           id: `room-${i + 1}`,
           name: `Gamers ${i + 1}`,
           participants: Math.floor(Math.random() * 50) + 1,
-          category: 'Games',
+          category: 'NCR',
         }));
         setRooms(sampleRooms);
         setFilteredRooms(sampleRooms);
@@ -100,6 +175,8 @@ const RoomList: React.FC = () => {
     show: { opacity: 1, y: 0 }
   };
 
+  const groupedRooms = groupRoomsByRegion(filteredRooms);
+
   return (
     <div className="p-3 h-full flex flex-col">
       <div className="mb-4">
@@ -123,22 +200,46 @@ const RoomList: React.FC = () => {
             animate="show"
             className="space-y-2"
           >
-            {filteredRooms.map((room) => (
-              <motion.div
-                key={room.id}
-                variants={item}
-                className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                onClick={() => handleRoomClick(room.id)}
-              >
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-uzzap-green mr-2 animate-pulse-light"></div>
-                  <span className="font-medium dark:text-white">{room.name}</span>
+            {allRegions.map((region) => {
+              const roomsInRegion = groupedRooms[region] || [];
+              if (roomsInRegion.length === 0) return null;
+              
+              return (
+                <div key={region} className="mb-2">
+                  <div 
+                    onClick={() => toggleRegion(region)}
+                    className="flex items-center p-2 bg-gray-100 dark:bg-gray-800 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                  >
+                    <ChevronDown 
+                      className={`h-4 w-4 mr-2 transition-transform ${expandedRegions[region] ? 'rotate-0' : '-rotate-90'}`} 
+                    />
+                    <span className="font-semibold text-sm">{regionTitles[region as keyof typeof regionTitles] || region}</span>
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({roomsInRegion.length})</span>
+                  </div>
+                  
+                  {expandedRegions[region] && (
+                    <div className="pl-6 mt-1 space-y-1">
+                      {roomsInRegion.map((room) => (
+                        <motion.div
+                          key={room.id}
+                          variants={item}
+                          className="p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => handleRoomClick(room.id)}
+                        >
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-uzzap-green mr-2 animate-pulse-light"></div>
+                            <span className="font-medium dark:text-white">{room.name}</span>
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            ({room.participants})
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  ({room.participants})
-                </div>
-              </motion.div>
-            ))}
+              );
+            })}
             
             {filteredRooms.length === 0 && (
               <div className="text-center py-10 text-gray-500 dark:text-gray-400">

@@ -7,16 +7,66 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define regions and provinces data structure
+const philippineRegions = {
+  'NCR': ['Manila'],
+  'CAR': ['Abra', 'Apayao', 'Benguet', 'Ifugao', 'Kalinga', 'Mountain Province'],
+  'Region I': ['Ilocos Norte', 'Ilocos Sur', 'La Union', 'Pangasinan'],
+  'Region II': ['Batanes', 'Cagayan', 'Isabela', 'Nueva Vizcaya', 'Quirino'],
+  'Region III': ['Aurora', 'Bataan', 'Bulacan', 'Nueva Ecija', 'Pampanga', 'Tarlac', 'Zambales'],
+  'Region IV-A': ['Cavite', 'Laguna', 'Batangas', 'Rizal', 'Quezon'],
+  'Region IV-B': ['Marinduque', 'Occidental Mindoro', 'Oriental Mindoro', 'Palawan', 'Romblon'],
+  'Region V': ['Albay', 'Camarines Norte', 'Camarines Sur', 'Catanduanes', 'Masbate', 'Sorsogon'],
+  'Region VI': ['Aklan', 'Antique', 'Capiz', 'Guimaras', 'Iloilo', 'Negros Occidental'],
+  'Region VII': ['Bohol', 'Cebu', 'Negros Oriental', 'Siquijor'],
+  'Region VIII': ['Biliran', 'Eastern Samar', 'Leyte', 'Northern Samar', 'Samar', 'Southern Leyte'],
+  'Region IX': ['Zamboanga del Norte', 'Zamboanga del Sur', 'Zamboanga Sibugay'],
+  'Region X': ['Bukidnon', 'Camiguin', 'Lanao del Norte', 'Misamis Occidental', 'Misamis Oriental'],
+  'Region XI': ['Davao de Oro', 'Davao del Norte', 'Davao del Sur', 'Davao Occidental', 'Davao Oriental'],
+  'Region XII': ['Cotabato', 'Sarangani', 'South Cotabato', 'Sultan Kudarat'],
+  'Region XIII': ['Agusan del Norte', 'Agusan del Sur', 'Dinagat Islands', 'Surigao del Norte', 'Surigao del Sur'],
+  'BARMM': ['Basilan', 'Lanao del Sur', 'Maguindanao del Norte', 'Maguindanao del Sur', 'Sulu', 'Tawi-Tawi']
+};
+
+// Get region titles with format numbers
+const regionTitles = {
+  'NCR': '1. National Capital Region (NCR)',
+  'CAR': '2. Cordillera Administrative Region (CAR)',
+  'Region I': '3. Ilocos Region (Region I)',
+  'Region II': '4. Cagayan Valley (Region II)',
+  'Region III': '5. Central Luzon (Region III)',
+  'Region IV-A': '6. CALABARZON (Region IV-A)',
+  'Region IV-B': '7. MIMAROPA (Region IV-B)',
+  'Region V': '8. Bicol Region (Region V)',
+  'Region VI': '9. Western Visayas (Region VI)',
+  'Region VII': '10. Central Visayas (Region VII)',
+  'Region VIII': '11. Eastern Visayas (Region VIII)',
+  'Region IX': '12. Zamboanga Peninsula (Region IX)',
+  'Region X': '13. Northern Mindanao (Region X)',
+  'Region XI': '14. Davao Region (Region XI)',
+  'Region XII': '15. SOCCSKSARGEN (Region XII)',
+  'Region XIII': '16. Caraga (Region XIII)',
+  'BARMM': '17. Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'
+};
 
 const CreateChatRoom: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Games');
+  const [region, setRegion] = useState<string | undefined>(undefined);
+  const [province, setProvince] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegionChange = (value: string) => {
+    setRegion(value);
+    setProvince(undefined); // Reset province when region changes
+  };
 
   const handleCreateRoom = async () => {
     if (!name.trim()) {
@@ -28,6 +78,17 @@ const CreateChatRoom: React.FC = () => {
       return;
     }
 
+    if (!region) {
+      toast({
+        title: "Error",
+        description: "Please select a region",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const category = province ? `${region} - ${province}` : region;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -75,21 +136,38 @@ const CreateChatRoom: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
+            <Label htmlFor="region">Region*</Label>
+            <Select value={region} onValueChange={handleRegionChange}>
+              <SelectTrigger id="region" className="w-full">
+                <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Games">Games</SelectItem>
-                <SelectItem value="Music">Music</SelectItem>
-                <SelectItem value="Movies">Movies</SelectItem>
-                <SelectItem value="Technology">Technology</SelectItem>
-                <SelectItem value="Sports">Sports</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                {Object.keys(regionTitles).map((key) => (
+                  <SelectItem key={key} value={key}>
+                    {regionTitles[key as keyof typeof regionTitles]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+          
+          {region && (
+            <div className="space-y-2">
+              <Label htmlFor="province">Province</Label>
+              <Select value={province} onValueChange={setProvince}>
+                <SelectTrigger id="province" className="w-full">
+                  <SelectValue placeholder="Select province" />
+                </SelectTrigger>
+                <SelectContent>
+                  {philippineRegions[region as keyof typeof philippineRegions].map((prov) => (
+                    <SelectItem key={prov} value={prov}>
+                      {prov}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>

@@ -12,6 +12,12 @@ const ChatRooms: React.FC = () => {
   return (
     <MainLayout showHeader={true} showFooter={true} showBackButton={true} title="Chat Rooms">
       <div className="relative h-full">
+        <div className="mb-4 px-4 pt-2">
+          <h1 className="text-xl font-bold text-center">Philippines Chat Rooms</h1>
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+            Connect with people from different regions
+          </p>
+        </div>
         <RoomList />
         <div className="absolute bottom-4 right-4">
           <Button 
