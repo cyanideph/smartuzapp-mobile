@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -95,52 +96,16 @@ const RoomList: React.FC = () => {
           throw error;
         }
         
+        // Add random participant count for visual appeal
         const roomsWithParticipants = data.map(room => ({
           ...room,
           participants: Math.floor(Math.random() * 50) + 1
         }));
         
-        console.log('Original rooms data:', roomsWithParticipants);
-        
-        let hasPhilippineRegions = roomsWithParticipants.some(room => 
-          room.region && allRegions.includes(room.region) && room.region !== 'Other'
-        );
-        
-        if (!hasPhilippineRegions && roomsWithParticipants.length > 0) {
-          console.log('No Philippine regions found, creating sample rooms');
-          
-          const timestamp = new Date().toISOString();
-          const sampleRegionalRooms = [
-            {
-              id: `sample-ncr-${Date.now()}`,
-              name: "NCR Chat",
-              participants: Math.floor(Math.random() * 50) + 1,
-              region: 'NCR',
-              province: 'Manila',
-              description: 'Chat room for National Capital Region',
-              category: 'NCR - Manila',
-              created_at: timestamp,
-              updated_at: timestamp
-            },
-            {
-              id: `sample-car-${Date.now()}`,
-              name: "CAR Chat",
-              participants: Math.floor(Math.random() * 50) + 1,
-              region: 'CAR',
-              province: 'Benguet',
-              description: 'Chat room for Cordillera Administrative Region',
-              category: 'CAR - Benguet',
-              created_at: timestamp,
-              updated_at: timestamp
-            }
-          ];
-          
-          roomsWithParticipants.push(...sampleRegionalRooms);
-        }
-        
         setRooms(roomsWithParticipants);
         setFilteredRooms(roomsWithParticipants);
         
+        // Initialize expanded state based on which regions have rooms
         const initialExpandedState: Record<string, boolean> = {};
         allRegions.forEach(region => {
           const hasRoomsInRegion = roomsWithParticipants.some(room => room.region === region);
@@ -148,10 +113,8 @@ const RoomList: React.FC = () => {
         });
         
         initialExpandedState['Other'] = true;
-        
         setExpandedRegions(initialExpandedState);
         
-        console.log('Grouped rooms:', groupRoomsByRegion(roomsWithParticipants));
       } catch (error) {
         console.error('Error fetching rooms:', error);
         toast({
@@ -159,34 +122,8 @@ const RoomList: React.FC = () => {
           description: 'Failed to load chat rooms. Please try again.',
           variant: 'destructive',
         });
-        
-        const timestamp = new Date().toISOString();
-        const sampleRooms: ChatRoom[] = [
-          {
-            id: `sample-ncr-${Date.now()}`,
-            name: "NCR Chat",
-            participants: Math.floor(Math.random() * 50) + 1,
-            region: 'NCR',
-            province: 'Manila',
-            description: 'Chat room for National Capital Region',
-            category: 'NCR - Manila',
-            created_at: timestamp,
-            updated_at: timestamp
-          },
-          {
-            id: `sample-car-${Date.now()}`,
-            name: "CAR Chat",
-            participants: Math.floor(Math.random() * 50) + 1,
-            region: 'CAR',
-            province: 'Benguet',
-            description: 'Chat room for Cordillera Administrative Region',
-            category: 'CAR - Benguet',
-            created_at: timestamp,
-            updated_at: timestamp
-          }
-        ];
-        setRooms(sampleRooms);
-        setFilteredRooms(sampleRooms);
+        setRooms([]);
+        setFilteredRooms([]);
       } finally {
         setLoading(false);
       }
@@ -314,4 +251,3 @@ const RoomList: React.FC = () => {
 };
 
 export default RoomList;
-
