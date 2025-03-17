@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 76% 43%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -35,19 +36,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -61,8 +55,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 142 76% 35%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -97,5 +91,41 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .uzzap-button {
+    @apply flex items-center space-x-2 w-full p-3 rounded-md bg-gray-100 text-gray-800 font-medium 
+    border border-gray-200 transition duration-200 hover:bg-gray-200 active:scale-[0.98] animate-fade-in;
+  }
+
+  .uzzap-menu-button {
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-gradient-to-br from-uzzap-lightGreen to-uzzap-green 
+    text-white font-semibold shadow-md transition duration-300 hover:shadow-lg active:scale-[0.97];
+  }
+
+  .uzzap-icon-button {
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-gradient-to-br shadow-md
+    text-white font-semibold transition duration-300 hover:shadow-lg active:scale-[0.97];
+  }
+
+  .uzzap-nav-button {
+    @apply px-6 py-2 text-center bg-black bg-opacity-70 text-white font-medium rounded-md 
+    transition-all duration-300 hover:bg-opacity-90 active:scale-[0.98];
+  }
+
+  .uzzap-input {
+    @apply w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 
+    focus:ring-uzzap-green transition-all duration-200;
+  }
+
+  .uzzap-card {
+    @apply bg-white rounded-lg shadow-md p-4 border border-gray-100;
+  }
+
+  .glass-effect {
+    @apply bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-lg shadow-lg;
   }
 }
