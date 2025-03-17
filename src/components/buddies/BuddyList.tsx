@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Buddy {
   id: string;
@@ -18,24 +20,82 @@ const BuddyList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [buddies, setBuddies] = useState<Buddy[]>([]);
   const [filteredBuddies, setFilteredBuddies] = useState<Buddy[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Sample data for demo purposes
+  // Fetch buddies from Supabase
   useEffect(() => {
-    const sampleBuddies: Buddy[] = [
-      { id: '1', username: 'GameMaster42', status: 'online', hasNewMessages: true },
-      { id: '2', username: 'PixelWarrior', status: 'online' },
-      { id: '3', username: 'NeonRider', status: 'away', lastSeen: '20 min ago' },
-      { id: '4', username: 'CyberPunk2077', status: 'offline', lastSeen: '2 hours ago' },
-      { id: '5', username: 'RetroGamer', status: 'busy' },
-      { id: '6', username: 'MobileGaming', status: 'online' },
-      { id: '7', username: 'ConsoleMaster', status: 'offline', lastSeen: '1 day ago' },
-      { id: '8', username: 'PCMasterRace', status: 'online', hasNewMessages: true },
-    ];
-    
-    setBuddies(sampleBuddies);
-    setFilteredBuddies(sampleBuddies);
-  }, []);
+    const fetchBuddies = async () => {
+      try {
+        setLoading(true);
+        // For now, just fetch all profiles
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(10);
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          // Format profiles as buddies
+          const fetchedBuddies: Buddy[] = data.map(profile => ({
+            id: profile.id,
+            username: profile.username,
+            status: profile.status as 'online' | 'offline' | 'away' | 'busy',
+            lastSeen: profile.last_seen ? new Date(profile.last_seen).toLocaleString() : undefined,
+            hasNewMessages: Math.random() > 0.7 // Random for demo
+          }));
+          
+          setBuddies(fetchedBuddies);
+          setFilteredBuddies(fetchedBuddies);
+        } else {
+          // Fallback to sample data if no profiles found
+          const sampleBuddies: Buddy[] = [
+            { id: '1', username: 'GameMaster42', status: 'online', hasNewMessages: true },
+            { id: '2', username: 'PixelWarrior', status: 'online' },
+            { id: '3', username: 'NeonRider', status: 'away', lastSeen: '20 min ago' },
+            { id: '4', username: 'CyberPunk2077', status: 'offline', lastSeen: '2 hours ago' },
+            { id: '5', username: 'RetroGamer', status: 'busy' },
+            { id: '6', username: 'MobileGaming', status: 'online' },
+            { id: '7', username: 'ConsoleMaster', status: 'offline', lastSeen: '1 day ago' },
+            { id: '8', username: 'PCMasterRace', status: 'online', hasNewMessages: true },
+          ];
+          
+          setBuddies(sampleBuddies);
+          setFilteredBuddies(sampleBuddies);
+        }
+      } catch (error) {
+        console.error('Error fetching buddies:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load buddies. Please try again.',
+          variant: 'destructive',
+        });
+        
+        // Fallback to sample data if database fetch fails
+        const sampleBuddies: Buddy[] = [
+          { id: '1', username: 'GameMaster42', status: 'online', hasNewMessages: true },
+          { id: '2', username: 'PixelWarrior', status: 'online' },
+          { id: '3', username: 'NeonRider', status: 'away', lastSeen: '20 min ago' },
+          { id: '4', username: 'CyberPunk2077', status: 'offline', lastSeen: '2 hours ago' },
+          { id: '5', username: 'RetroGamer', status: 'busy' },
+          { id: '6', username: 'MobileGaming', status: 'online' },
+          { id: '7', username: 'ConsoleMaster', status: 'offline', lastSeen: '1 day ago' },
+          { id: '8', username: 'PCMasterRace', status: 'online', hasNewMessages: true },
+        ];
+        
+        setBuddies(sampleBuddies);
+        setFilteredBuddies(sampleBuddies);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBuddies();
+  }, [toast]);
   
   useEffect(() => {
     if (searchQuery) {
@@ -88,43 +148,49 @@ const BuddyList: React.FC = () => {
       </div>
       
       <ScrollArea className="flex-1 h-[calc(100vh-220px)]">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="space-y-2"
-        >
-          <AnimatePresence>
-            {filteredBuddies.map((buddy) => (
-              <motion.div
-                key={buddy.id}
-                variants={item}
-                layoutId={buddy.id}
-                className="p-3 bg-white rounded-md border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50"
-                onClick={() => handleBuddyClick(buddy.id)}
-              >
-                <div className="flex items-center">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(buddy.status)} mr-2`}></div>
-                  <span className="font-medium">{buddy.username}</span>
-                  {buddy.hasNewMessages && (
-                    <Badge className="ml-2 bg-uzzap-green text-white">
-                      New
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {buddy.status === 'online' ? 'Online' : buddy.lastSeen}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {filteredBuddies.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              No buddies found matching "{searchQuery}"
-            </div>
-          )}
-        </motion.div>
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-uzzap-green"></div>
+          </div>
+        ) : (
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-2"
+          >
+            <AnimatePresence>
+              {filteredBuddies.map((buddy) => (
+                <motion.div
+                  key={buddy.id}
+                  variants={item}
+                  layoutId={buddy.id}
+                  className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                  onClick={() => handleBuddyClick(buddy.id)}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-full ${getStatusColor(buddy.status)} mr-2`}></div>
+                    <span className="font-medium dark:text-white">{buddy.username}</span>
+                    {buddy.hasNewMessages && (
+                      <Badge className="ml-2 bg-uzzap-green text-white">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {buddy.status === 'online' ? 'Online' : buddy.lastSeen}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {filteredBuddies.length === 0 && (
+              <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+                No buddies found matching "{searchQuery}"
+              </div>
+            )}
+          </motion.div>
+        )}
       </ScrollArea>
     </div>
   );

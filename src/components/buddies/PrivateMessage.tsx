@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Message {
   id: string;
@@ -25,28 +27,60 @@ const PrivateMessage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [buddy, setBuddy] = useState<Buddy | null>(null);
   const [currentUser, setCurrentUser] = useState('');
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   // Scroll to bottom of messages when they change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  // Set up initial data for the demo
+  // Set up initial data and subscriptions
   useEffect(() => {
+    if (!buddyId) return;
+    
     const username = localStorage.getItem('uzzap_user') || 'Guest';
     setCurrentUser(username);
     
-    // Get buddy data based on id
-    const buddyMap: Record<string, Buddy> = {
-      '1': { id: '1', username: 'GameMaster42', status: 'online' },
-      '2': { id: '2', username: 'PixelWarrior', status: 'online' },
-      '8': { id: '8', username: 'PCMasterRace', status: 'online' },
+    // Fetch buddy details
+    const fetchBuddyDetails = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', buddyId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching buddy details:', error);
+          // Fallback to a default buddy if database fetch fails
+          setBuddy({
+            id: buddyId,
+            username: 'User',
+            status: 'offline'
+          });
+        } else if (data) {
+          setBuddy({
+            id: data.id,
+            username: data.username,
+            status: data.status as 'online' | 'offline' | 'away' | 'busy'
+          });
+        }
+      } catch (error) {
+        console.error('Error in buddy details fetch:', error);
+        setBuddy({
+          id: buddyId,
+          username: 'User',
+          status: 'offline'
+        });
+      }
     };
     
-    setBuddy(buddyMap[buddyId as string] || { id: buddyId as string, username: 'Unknown User', status: 'offline' });
+    // For now, just use sample messages
+    // In a real implementation, you would fetch messages from private_messages table
+    // and set up a subscription for new messages
     
-    // Sample messages
     const sampleMessages: Message[] = [
       {
         id: '1',
@@ -80,32 +114,38 @@ const PrivateMessage: React.FC = () => {
       },
     ];
     
+    fetchBuddyDetails();
     setMessages(sampleMessages);
+    setLoading(false);
+    
   }, [buddyId]);
   
   const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: Date.now().toString(),
-        text: newMessage,
+    if (!newMessage.trim()) return;
+    
+    // In a real implementation, you would insert a new message into the private_messages table
+    // For now, just add it to the local state
+    
+    const newMsg: Message = {
+      id: Date.now().toString(),
+      text: newMessage,
+      timestamp: new Date(),
+      isFromMe: true,
+    };
+    
+    setMessages([...messages, newMsg]);
+    setNewMessage('');
+    
+    // Simulate a response after a short delay
+    setTimeout(() => {
+      const responseMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Sure! Let me know what you think after you play it.',
         timestamp: new Date(),
-        isFromMe: true,
+        isFromMe: false,
       };
-      
-      setMessages([...messages, newMsg]);
-      setNewMessage('');
-      
-      // Simulate a response after a short delay
-      setTimeout(() => {
-        const responseMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          text: 'Sure! Let me know what you think after you play it.',
-          timestamp: new Date(),
-          isFromMe: false,
-        };
-        setMessages(prev => [...prev, responseMsg]);
-      }, 3000);
-    }
+      setMessages(prev => [...prev, responseMsg]);
+    }, 3000);
   };
   
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -138,36 +178,42 @@ const PrivateMessage: React.FC = () => {
         )}
       </div>
       
-      <ScrollArea className="flex-1 p-3 bg-gray-50">
-        <AnimatePresence>
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`mb-3 ${message.isFromMe ? 'flex justify-end' : ''}`}
-            >
-              <div 
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.isFromMe 
-                    ? 'bg-uzzap-green text-white ml-auto' 
-                    : 'bg-white border border-gray-200'
-                }`}
+      <ScrollArea className="flex-1 p-3 bg-gray-50 dark:bg-gray-900">
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-uzzap-green"></div>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`mb-3 ${message.isFromMe ? 'flex justify-end' : ''}`}
               >
-                <div className="text-sm whitespace-pre-wrap">{message.text}</div>
-                <div className={`text-xs mt-1 ${message.isFromMe ? 'text-white/70' : 'text-gray-500'}`}>
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div 
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.isFromMe 
+                      ? 'bg-uzzap-green text-white ml-auto' 
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-white'
+                  }`}
+                >
+                  <div className="text-sm whitespace-pre-wrap">{message.text}</div>
+                  <div className={`text-xs mt-1 ${message.isFromMe ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-          <div ref={messagesEndRef} />
-        </AnimatePresence>
+              </motion.div>
+            ))}
+            <div ref={messagesEndRef} />
+          </AnimatePresence>
+        )}
       </ScrollArea>
       
-      <div className="bg-white border-t border-gray-200 p-3 flex items-center">
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 flex items-center">
         <Input
           className="flex-1 uzzap-input"
           placeholder="Type a message..."

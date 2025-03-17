@@ -98,7 +98,8 @@
 @layer components {
   .uzzap-button {
     @apply flex items-center space-x-2 w-full p-3 rounded-md bg-gray-100 text-gray-800 font-medium 
-    border border-gray-200 transition duration-200 hover:bg-gray-200 active:scale-[0.98] animate-fade-in;
+    border border-gray-200 transition duration-200 hover:bg-gray-200 active:scale-[0.98] animate-fade-in
+    dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700;
   }
 
   .uzzap-menu-button {
@@ -113,19 +114,23 @@
 
   .uzzap-nav-button {
     @apply px-6 py-2 text-center bg-black bg-opacity-70 text-white font-medium rounded-md 
-    transition-all duration-300 hover:bg-opacity-90 active:scale-[0.98];
+    transition-all duration-300 hover:bg-opacity-90 active:scale-[0.98]
+    dark:bg-white dark:bg-opacity-10 dark:hover:bg-opacity-20;
   }
 
   .uzzap-input {
     @apply w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 
-    focus:ring-uzzap-green transition-all duration-200;
+    focus:ring-uzzap-green transition-all duration-200
+    dark:bg-gray-800 dark:border-gray-700 dark:text-white;
   }
 
   .uzzap-card {
-    @apply bg-white rounded-lg shadow-md p-4 border border-gray-100;
+    @apply bg-white rounded-lg shadow-md p-4 border border-gray-100
+    dark:bg-gray-800 dark:border-gray-700 dark:text-white;
   }
 
   .glass-effect {
-    @apply bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-lg shadow-lg;
+    @apply bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-lg shadow-lg
+    dark:bg-black dark:bg-opacity-30 dark:border-white dark:border-opacity-10;
   }
 }

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -24,29 +25,31 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/chatrooms" element={<ChatRooms />} />
-            <Route path="/chat/room/:roomId" element={<ChatRoomDetail />} />
-            <Route path="/buddies" element={<Buddies />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/message/:buddyId" element={<PrivateMessagePage />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/about" element={<About />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AnimatePresence>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/chatrooms" element={<ChatRooms />} />
+              <Route path="/chat/room/:roomId" element={<ChatRoomDetail />} />
+              <Route path="/buddies" element={<Buddies />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/message/:buddyId" element={<PrivateMessagePage />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/about" element={<About />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

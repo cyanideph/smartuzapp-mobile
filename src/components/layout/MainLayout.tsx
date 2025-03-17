@@ -1,9 +1,9 @@
-
 import React, { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import UzzapLogo from '../logo/UzzapLogo';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -59,6 +59,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 </Button>
               )}
               <UzzapLogo size="sm" showBeta={true} />
+              <ThemeToggle />
             </div>
             {title && (
               <h1 className="text-lg font-semibold text-white ml-2">{title}</h1>

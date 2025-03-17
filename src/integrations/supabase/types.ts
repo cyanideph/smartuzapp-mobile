@@ -9,7 +9,173 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      buddies: {
+        Row: {
+          buddy_id: string | null
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          buddy_id?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          buddy_id?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buddies_buddy_id_fkey"
+            columns: ["buddy_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buddies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          created_at: string
+          id: string
+          room_id: string | null
+          sender: string
+          text: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          sender: string
+          text: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          sender?: string
+          text?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_messages: {
+        Row: {
+          created_at: string
+          id: string
+          read: boolean | null
+          receiver_id: string | null
+          sender_id: string | null
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          last_seen: string | null
+          status: string | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          last_seen?: string | null
+          status?: string | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          last_seen?: string | null
+          status?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
