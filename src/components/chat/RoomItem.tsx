@@ -24,7 +24,7 @@ const RoomItem: React.FC<RoomItemProps> = ({ room, onClick }) => {
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0 mt-1">
-            <OnlineIndicator active={true} size="md" pulse={room.hasActivity} />
+            <OnlineIndicator status="online" size="md" pulse={room.hasActivity} />
           </div>
           <div>
             <div className="flex items-center space-x-2">
