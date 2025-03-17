@@ -10,6 +10,7 @@ export const useRooms = () => {
   const [filteredRooms, setFilteredRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRegions, setExpandedRegions] = useState<Record<string, boolean>>({});
+  const [roomPresence, setRoomPresence] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   // Fetch rooms from Supabase
@@ -40,9 +41,6 @@ export const useRooms = () => {
               .limit(1)
               .single();
             
-            // Generate random participants for visual appeal (in a real app, this would be actual count)
-            const participants = Math.floor(Math.random() * 50) + 1;
-            
             // Determine if room has new activity since last visit
             const hasActivity = lastMessage ? new Date(lastMessage.created_at) > new Date(Date.now() - 1000 * 60 * 60) : false;
             
@@ -51,7 +49,7 @@ export const useRooms = () => {
             
             return {
               ...room,
-              participants,
+              participants: roomPresence[room.id] || 0,
               hasActivity,
               unreadCount: hasActivity ? unreadCount : 0,
               lastMessage: lastMessage ? lastMessage.text : null,
@@ -61,7 +59,7 @@ export const useRooms = () => {
             console.error(`Error fetching details for room ${room.id}:`, error);
             return {
               ...room,
-              participants: Math.floor(Math.random() * 50) + 1,
+              participants: roomPresence[room.id] || 0,
               hasActivity: false,
               unreadCount: 0
             };
@@ -97,6 +95,49 @@ export const useRooms = () => {
 
     fetchRooms();
 
+    // Generate a unique ID for this user if not exists
+    const userId = localStorage.getItem('uzzap_user_id') || Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('uzzap_user_id', userId);
+    
+    // Get username from local storage or generate one
+    const username = localStorage.getItem('uzzap_user') || `Guest-${userId.substring(0, 5)}`;
+    
+    // Set up a global presence channel to track all online users
+    const globalChannel = supabase.channel('global_presence')
+      .on('presence', { event: 'sync' }, () => {
+        // Process presence data to count users per room
+        const presenceState = globalChannel.presenceState();
+        const roomCounts: Record<string, number> = {};
+        
+        // Count users in each room
+        Object.values(presenceState).forEach((userList: any) => {
+          userList.forEach((presence: any) => {
+            if (presence.room_id) {
+              roomCounts[presence.room_id] = (roomCounts[presence.room_id] || 0) + 1;
+            }
+          });
+        });
+        
+        setRoomPresence(roomCounts);
+        
+        // Update rooms with new presence data
+        setRooms(prev => prev.map(room => ({
+          ...room,
+          participants: roomCounts[room.id] || 0
+        })));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Subscribed to global presence channel');
+          // Track the current user's global presence
+          await globalChannel.track({
+            user_id: userId,
+            username: username,
+            online_at: new Date().toISOString()
+          });
+        }
+      });
+    
     // Set up real-time subscription for chat_rooms table
     const roomsChannel = supabase
       .channel('chat_rooms_changes')
@@ -111,7 +152,7 @@ export const useRooms = () => {
         if (payload.eventType === 'INSERT') {
           const newRoom = {
             ...(payload.new as ChatRoom),
-            participants: Math.floor(Math.random() * 50) + 1,
+            participants: 0,
             hasActivity: true,
             unreadCount: 0
           };
@@ -128,7 +169,12 @@ export const useRooms = () => {
         } 
         else if (payload.eventType === 'UPDATE') {
           setRooms(prev => prev.map(room => 
-            room.id === payload.new.id ? {...payload.new as ChatRoom, participants: room.participants, hasActivity: room.hasActivity, unreadCount: room.unreadCount} : room
+            room.id === payload.new.id ? {
+              ...payload.new as ChatRoom, 
+              participants: roomPresence[room.id] || 0, 
+              hasActivity: room.hasActivity, 
+              unreadCount: room.unreadCount
+            } : room
           ));
         }
         else if (payload.eventType === 'DELETE') {
@@ -170,10 +216,19 @@ export const useRooms = () => {
     
     // Clean up subscriptions on unmount
     return () => {
+      supabase.removeChannel(globalChannel);
       supabase.removeChannel(roomsChannel);
       supabase.removeChannel(messagesChannel);
     };
   }, [toast]);
+  
+  // Update rooms when presence changes
+  useEffect(() => {
+    setRooms(prev => prev.map(room => ({
+      ...room,
+      participants: roomPresence[room.id] || 0
+    })));
+  }, [roomPresence]);
   
   // Filter rooms based on search query
   useEffect(() => {

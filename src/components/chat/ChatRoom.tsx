@@ -21,10 +21,21 @@ const ChatRoom: React.FC = () => {
     if (!loading && roomInfo.name) {
       toast({
         title: `Welcome to ${roomInfo.name}`,
-        description: `${onlineUsers} people are online in this room`,
+        description: `${onlineUsers} ${onlineUsers === 1 ? 'person is' : 'people are'} online in this room`,
       });
     }
   }, [loading, roomInfo.name, onlineUsers, toast]);
+
+  // Auto-scroll effect when online users count changes
+  useEffect(() => {
+    if (onlineUsers > 0) {
+      toast({
+        title: 'Online users updated',
+        description: `${onlineUsers} ${onlineUsers === 1 ? 'person is' : 'people are'} now online in this room`,
+        duration: 3000,
+      });
+    }
+  }, [onlineUsers, toast]);
 
   return (
     <div className="h-full flex flex-col">
@@ -45,6 +56,9 @@ const ChatRoom: React.FC = () => {
             <p>No messages yet. Be the first to say hello!</p>
             <p className="mt-2 text-sm">
               This room is about {roomInfo.description || `chatting with people from ${roomInfo.region || 'Philippines'}`}
+            </p>
+            <p className="mt-2 text-sm text-uzzap-green">
+              {onlineUsers} {onlineUsers === 1 ? 'person is' : 'people are'} currently online
             </p>
           </div>
         ) : (
