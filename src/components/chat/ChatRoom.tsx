@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Message {
   id: string;
@@ -112,7 +113,7 @@ const ChatRoom: React.FC = () => {
     fetchMessages();
     
     // Set up real-time subscription
-    const subscription = supabase
+    const channel = supabase
       .channel(`room:${roomId}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -120,25 +121,32 @@ const ChatRoom: React.FC = () => {
         table: 'messages',
         filter: `room_id=eq.${roomId}`
       }, (payload) => {
-        const newMessage = payload.new;
+        console.log('New message received:', payload);
+        const newMsg = payload.new;
         
         // Add the new message to the state
         setMessages(currentMessages => [
           ...currentMessages, 
           {
-            id: newMessage.id,
-            sender: newMessage.sender,
-            text: newMessage.text,
-            timestamp: new Date(newMessage.created_at),
-            isCurrentUser: newMessage.sender === username
+            id: newMsg.id,
+            sender: newMsg.sender,
+            text: newMsg.text,
+            timestamp: new Date(newMsg.created_at),
+            isCurrentUser: newMsg.sender === username
           }
         ]);
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Subscription status for room ${roomId}:`, status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to room changes');
+        }
+      });
     
     // Clean up subscription on unmount
     return () => {
-      subscription.unsubscribe();
+      console.log('Cleaning up subscription');
+      supabase.removeChannel(channel);
     };
   }, [roomId, toast]);
   
@@ -146,17 +154,37 @@ const ChatRoom: React.FC = () => {
     if (!newMessage.trim() || !roomId) return;
     
     try {
+      console.log('Sending message:', { roomId, sender: currentUser, text: newMessage });
+      
       // Insert the message into the database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .insert({
           room_id: roomId,
           sender: currentUser,
           text: newMessage,
-        });
+        })
+        .select();
       
       if (error) {
         throw error;
+      }
+      
+      console.log('Message sent successfully:', data);
+      
+      // Optimistically add the message to the UI immediately
+      if (data && data.length > 0) {
+        const newMsg = data[0];
+        setMessages(prevMessages => [
+          ...prevMessages,
+          {
+            id: newMsg.id,
+            sender: newMsg.sender,
+            text: newMsg.text,
+            timestamp: new Date(newMsg.created_at),
+            isCurrentUser: true
+          }
+        ]);
       }
       
       // Clear the input
