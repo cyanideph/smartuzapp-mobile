@@ -17,28 +17,64 @@ export const useRooms = () => {
     const fetchRooms = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        
+        // First get all rooms
+        const { data: roomsData, error: roomsError } = await supabase
           .from('chat_rooms')
           .select('*')
           .order('name');
         
-        if (error) {
-          throw error;
+        if (roomsError) {
+          throw roomsError;
         }
         
-        // Add random participant count for visual appeal
-        const roomsWithParticipants = data.map(room => ({
-          ...room,
-          participants: Math.floor(Math.random() * 50) + 1
+        // Get last message for each room
+        const roomsWithDetails = await Promise.all(roomsData.map(async (room) => {
+          try {
+            // Get last message
+            const { data: lastMessage, error: messageError } = await supabase
+              .from('messages')
+              .select('*')
+              .eq('room_id', room.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+            
+            // Generate random participants for visual appeal (in a real app, this would be actual count)
+            const participants = Math.floor(Math.random() * 50) + 1;
+            
+            // Determine if room has new activity since last visit
+            const hasActivity = lastMessage ? new Date(lastMessage.created_at) > new Date(Date.now() - 1000 * 60 * 60) : false;
+            
+            // Get unread count (in a real app with auth, this would be based on user's last read timestamp)
+            const unreadCount = Math.floor(Math.random() * 10);
+            
+            return {
+              ...room,
+              participants,
+              hasActivity,
+              unreadCount: hasActivity ? unreadCount : 0,
+              lastMessage: lastMessage ? lastMessage.text : null,
+              lastMessageTime: lastMessage ? lastMessage.created_at : null
+            };
+          } catch (error) {
+            console.error(`Error fetching details for room ${room.id}:`, error);
+            return {
+              ...room,
+              participants: Math.floor(Math.random() * 50) + 1,
+              hasActivity: false,
+              unreadCount: 0
+            };
+          }
         }));
         
-        setRooms(roomsWithParticipants);
-        setFilteredRooms(roomsWithParticipants);
+        setRooms(roomsWithDetails);
+        setFilteredRooms(roomsWithDetails);
         
         // Initialize expanded state based on which regions have rooms
         const initialExpandedState: Record<string, boolean> = {};
         allRegions.forEach(region => {
-          const hasRoomsInRegion = roomsWithParticipants.some(room => room.region === region);
+          const hasRoomsInRegion = roomsWithDetails.some(room => room.region === region);
           initialExpandedState[region] = hasRoomsInRegion;
         });
         
@@ -62,7 +98,7 @@ export const useRooms = () => {
     fetchRooms();
 
     // Set up real-time subscription for chat_rooms table
-    const channel = supabase
+    const roomsChannel = supabase
       .channel('chat_rooms_changes')
       .on('postgres_changes', { 
         event: '*', 
@@ -75,7 +111,9 @@ export const useRooms = () => {
         if (payload.eventType === 'INSERT') {
           const newRoom = {
             ...(payload.new as ChatRoom),
-            participants: Math.floor(Math.random() * 50) + 1
+            participants: Math.floor(Math.random() * 50) + 1,
+            hasActivity: true,
+            unreadCount: 0
           };
           
           setRooms(prev => [...prev, newRoom]);
@@ -90,7 +128,7 @@ export const useRooms = () => {
         } 
         else if (payload.eventType === 'UPDATE') {
           setRooms(prev => prev.map(room => 
-            room.id === payload.new.id ? {...payload.new as ChatRoom, participants: room.participants} : room
+            room.id === payload.new.id ? {...payload.new as ChatRoom, participants: room.participants, hasActivity: room.hasActivity, unreadCount: room.unreadCount} : room
           ));
         }
         else if (payload.eventType === 'DELETE') {
@@ -101,9 +139,39 @@ export const useRooms = () => {
         console.log('Chat rooms subscription status:', status);
       });
     
-    // Clean up subscription on unmount
+    // Subscribe to message changes to update room activity
+    const messagesChannel = supabase
+      .channel('messages_changes')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages'
+      }, (payload) => {
+        console.log('New message received:', payload);
+        const newMessage = payload.new;
+        
+        // Update the room with the new message information
+        setRooms(prev => prev.map(room => {
+          if (room.id === newMessage.room_id) {
+            return {
+              ...room,
+              hasActivity: true,
+              unreadCount: (room.unreadCount || 0) + 1,
+              lastMessage: newMessage.text,
+              lastMessageTime: newMessage.created_at
+            };
+          }
+          return room;
+        }));
+      })
+      .subscribe((status) => {
+        console.log('Messages subscription status:', status);
+      });
+    
+    // Clean up subscriptions on unmount
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(roomsChannel);
+      supabase.removeChannel(messagesChannel);
     };
   }, [toast]);
   
@@ -146,10 +214,44 @@ export const useRooms = () => {
     return grouped;
   };
 
+  // Get filtered rooms based on the active tab
+  const getFilteredRoomsByTab = (activeTab: string) => {
+    if (activeTab === 'popular') {
+      return [...filteredRooms].sort((a, b) => (b.participants || 0) - (a.participants || 0));
+    } else if (activeTab === 'recent') {
+      return [...filteredRooms].sort((a, b) => {
+        if (a.lastMessageTime && b.lastMessageTime) {
+          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+        } else if (a.lastMessageTime) {
+          return -1;
+        } else if (b.lastMessageTime) {
+          return 1;
+        }
+        return 0;
+      });
+    } else if (activeTab === 'active') {
+      return [...filteredRooms].filter(room => room.hasActivity);
+    }
+    return filteredRooms;
+  };
+
   const toggleRegion = (region: string) => {
     setExpandedRegions(prev => ({
       ...prev,
       [region]: !prev[region]
+    }));
+  };
+
+  const markRoomAsRead = (roomId: string) => {
+    setRooms(prev => prev.map(room => {
+      if (room.id === roomId) {
+        return {
+          ...room,
+          hasActivity: false,
+          unreadCount: 0
+        };
+      }
+      return room;
     }));
   };
 
@@ -163,6 +265,8 @@ export const useRooms = () => {
     hasRooms: rooms.length > 0,
     hasVisibleRooms: Object.values(groupRoomsByRegion()).some(group => group.length > 0),
     groupRoomsByRegion,
-    toggleRegion
+    getFilteredRoomsByTab,
+    toggleRegion,
+    markRoomAsRead
   };
 };

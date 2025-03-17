@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,9 +7,10 @@ import { motion } from 'framer-motion';
 import { useRooms } from '@/hooks/use-rooms';
 import { allRegions } from '@/types/chatRoom';
 import RegionGroup from './RegionGroup';
-import { Search, X } from 'lucide-react';
+import { Search, X, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 const RoomList: React.FC = () => {
   const navigate = useNavigate();
@@ -20,13 +22,19 @@ const RoomList: React.FC = () => {
     hasVisibleRooms, 
     expandedRegions,
     groupRoomsByRegion, 
+    getFilteredRoomsByTab,
     toggleRegion,
+    markRoomAsRead,
     rooms
   } = useRooms();
 
-  const [activeTab, setActiveTab] = useState<'all' | 'popular' | 'recent'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'popular' | 'recent' | 'active'>('all');
+  
+  // Count rooms with activity
+  const activeRoomsCount = rooms.filter(room => room.hasActivity).length;
 
   const handleRoomClick = (roomId: string) => {
+    markRoomAsRead(roomId);
     navigate(`/chat/room/${roomId}`);
   };
 
@@ -34,19 +42,17 @@ const RoomList: React.FC = () => {
     setSearchQuery('');
   };
 
-  // Filter rooms based on the active tab
-  const getFilteredRoomsByTab = () => {
-    if (activeTab === 'popular') {
-      return [...rooms].sort((a, b) => b.participants - a.participants);
-    } else if (activeTab === 'recent') {
-      // In a real app, this might be based on creation date or last activity
-      // For now, we'll just shuffle them to simulate "recent" rooms
-      return [...rooms].sort(() => Math.random() - 0.5);
-    }
-    return rooms;
-  };
-
-  const groupedRooms = groupRoomsByRegion();
+  const filteredRoomsByTab = getFilteredRoomsByTab(activeTab);
+  
+  // Group the filtered rooms by region
+  const groupedRoomsByRegion: Record<string, any> = {};
+  
+  allRegions.forEach(region => {
+    groupedRoomsByRegion[region] = filteredRoomsByTab.filter(room => room.region === region);
+  });
+  
+  // Add "Other" category for rooms without a region
+  groupedRoomsByRegion['Other'] = filteredRoomsByTab.filter(room => !room.region || !allRegions.includes(room.region));
 
   return (
     <div className="p-3 h-full flex flex-col">
@@ -73,10 +79,18 @@ const RoomList: React.FC = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">All Rooms</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="popular">Popular</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
+          <TabsTrigger value="active" className="relative">
+            Active
+            {activeRoomsCount > 0 && (
+              <Badge variant="secondary" className="ml-1 bg-uzzap-green text-white absolute -top-1 -right-1 text-xs">
+                {activeRoomsCount}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
       
@@ -101,6 +115,29 @@ const RoomList: React.FC = () => {
               Create Room
             </Button>
           </div>
+        ) : filteredRoomsByTab.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+            {activeTab === 'active' ? (
+              <>
+                <div className="mb-4">
+                  <BellRing className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600" />
+                </div>
+                <p>No active rooms at the moment.</p>
+              </>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <p>No rooms found matching "{searchQuery}"</p>
+                <Button variant="outline" className="mt-4" onClick={handleClearSearch}>
+                  Clear Search
+                </Button>
+              </>
+            )}
+          </div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
@@ -111,7 +148,7 @@ const RoomList: React.FC = () => {
               <RegionGroup
                 key={region}
                 region={region}
-                rooms={groupedRooms[region] || []}
+                rooms={groupedRoomsByRegion[region] || []}
                 isExpanded={!!expandedRegions[region]}
                 onToggle={() => toggleRegion(region)}
                 onRoomClick={handleRoomClick}
