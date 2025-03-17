@@ -33,7 +33,7 @@ const BuddyList: React.FC = () => {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .limit(10);
+          .limit(20);
         
         if (error) {
           throw error;
@@ -52,20 +52,14 @@ const BuddyList: React.FC = () => {
           setBuddies(fetchedBuddies);
           setFilteredBuddies(fetchedBuddies);
         } else {
-          // Fallback to sample data if no profiles found
-          const sampleBuddies: Buddy[] = [
-            { id: '1', username: 'GameMaster42', status: 'online', hasNewMessages: true },
-            { id: '2', username: 'PixelWarrior', status: 'online' },
-            { id: '3', username: 'NeonRider', status: 'away', lastSeen: '20 min ago' },
-            { id: '4', username: 'CyberPunk2077', status: 'offline', lastSeen: '2 hours ago' },
-            { id: '5', username: 'RetroGamer', status: 'busy' },
-            { id: '6', username: 'MobileGaming', status: 'online' },
-            { id: '7', username: 'ConsoleMaster', status: 'offline', lastSeen: '1 day ago' },
-            { id: '8', username: 'PCMasterRace', status: 'online', hasNewMessages: true },
-          ];
-          
-          setBuddies(sampleBuddies);
-          setFilteredBuddies(sampleBuddies);
+          // If no profiles are found, show empty state
+          setBuddies([]);
+          setFilteredBuddies([]);
+          toast({
+            title: 'No buddies found',
+            description: 'No profiles are available in the system',
+            variant: 'default',
+          });
         }
       } catch (error) {
         console.error('Error fetching buddies:', error);
@@ -75,20 +69,8 @@ const BuddyList: React.FC = () => {
           variant: 'destructive',
         });
         
-        // Fallback to sample data if database fetch fails
-        const sampleBuddies: Buddy[] = [
-          { id: '1', username: 'GameMaster42', status: 'online', hasNewMessages: true },
-          { id: '2', username: 'PixelWarrior', status: 'online' },
-          { id: '3', username: 'NeonRider', status: 'away', lastSeen: '20 min ago' },
-          { id: '4', username: 'CyberPunk2077', status: 'offline', lastSeen: '2 hours ago' },
-          { id: '5', username: 'RetroGamer', status: 'busy' },
-          { id: '6', username: 'MobileGaming', status: 'online' },
-          { id: '7', username: 'ConsoleMaster', status: 'offline', lastSeen: '1 day ago' },
-          { id: '8', username: 'PCMasterRace', status: 'online', hasNewMessages: true },
-        ];
-        
-        setBuddies(sampleBuddies);
-        setFilteredBuddies(sampleBuddies);
+        setBuddies([]);
+        setFilteredBuddies([]);
       } finally {
         setLoading(false);
       }
@@ -184,9 +166,9 @@ const BuddyList: React.FC = () => {
               ))}
             </AnimatePresence>
             
-            {filteredBuddies.length === 0 && (
+            {filteredBuddies.length === 0 && !loading && (
               <div className="text-center py-10 text-gray-500 dark:text-gray-400">
-                No buddies found matching "{searchQuery}"
+                {searchQuery ? `No buddies found matching "${searchQuery}"` : "No buddies available"}
               </div>
             )}
           </motion.div>

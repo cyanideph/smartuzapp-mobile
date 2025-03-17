@@ -54,13 +54,15 @@ const PrivateMessage: React.FC = () => {
         
         if (error) {
           console.error('Error fetching buddy details:', error);
-          // Fallback to a default buddy if database fetch fails
-          setBuddy({
-            id: buddyId,
-            username: 'User',
-            status: 'offline'
+          toast({
+            title: 'Error',
+            description: 'Unable to load buddy details',
+            variant: 'destructive',
           });
-        } else if (data) {
+          return;
+        }
+        
+        if (data) {
           setBuddy({
             id: data.id,
             username: data.username,
@@ -69,59 +71,40 @@ const PrivateMessage: React.FC = () => {
         }
       } catch (error) {
         console.error('Error in buddy details fetch:', error);
-        setBuddy({
-          id: buddyId,
-          username: 'User',
-          status: 'offline'
-        });
       }
     };
     
-    // For now, just use sample messages
-    // In a real implementation, you would fetch messages from private_messages table
-    // and set up a subscription for new messages
-    
-    const sampleMessages: Message[] = [
-      {
-        id: '1',
-        text: 'Hey there!',
-        timestamp: new Date(Date.now() - 60000 * 20),
-        isFromMe: false,
-      },
-      {
-        id: '2',
-        text: 'Hi! How are you?',
-        timestamp: new Date(Date.now() - 60000 * 18),
-        isFromMe: true,
-      },
-      {
-        id: '3',
-        text: 'I\'m good, thanks! Have you tried the new game?',
-        timestamp: new Date(Date.now() - 60000 * 15),
-        isFromMe: false,
-      },
-      {
-        id: '4',
-        text: 'Not yet, is it worth playing?',
-        timestamp: new Date(Date.now() - 60000 * 10),
-        isFromMe: true,
-      },
-      {
-        id: '5',
-        text: 'Definitely! The graphics are amazing and the storyline is great.',
-        timestamp: new Date(Date.now() - 60000 * 5),
-        isFromMe: false,
-      },
-    ];
+    // Fetch messages
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        
+        // In a real implementation, we would fetch from private_messages table
+        // For now, just set empty messages array since we don't have the table set up yet
+        setMessages([]);
+        
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load messages',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
     
     fetchBuddyDetails();
-    setMessages(sampleMessages);
-    setLoading(false);
+    fetchMessages();
     
-  }, [buddyId]);
+    // Set up subscription for future implementation
+    // This would listen for new private messages
+    
+  }, [buddyId, toast]);
   
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !buddyId) return;
     
     // In a real implementation, you would insert a new message into the private_messages table
     // For now, just add it to the local state
@@ -136,16 +119,10 @@ const PrivateMessage: React.FC = () => {
     setMessages([...messages, newMsg]);
     setNewMessage('');
     
-    // Simulate a response after a short delay
-    setTimeout(() => {
-      const responseMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Sure! Let me know what you think after you play it.',
-        timestamp: new Date(),
-        isFromMe: false,
-      };
-      setMessages(prev => [...prev, responseMsg]);
-    }, 3000);
+    toast({
+      title: 'Message sent',
+      description: 'Your message has been sent.',
+    });
   };
   
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -182,6 +159,10 @@ const PrivateMessage: React.FC = () => {
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-uzzap-green"></div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+            No messages yet. Start the conversation!
           </div>
         ) : (
           <AnimatePresence>

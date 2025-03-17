@@ -21,8 +21,10 @@ const ChatRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [roomName, setRoomName] = useState('');
+  const [roomInfo, setRoomInfo] = useState<{name: string, region?: string, province?: string}>({name: ''});
   const [currentUser, setCurrentUser] = useState('');
   const [loading, setLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -43,22 +45,26 @@ const ChatRoom: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('chat_rooms')
-          .select('name')
+          .select('name, region, province')
           .eq('id', roomId)
           .single();
         
         if (error) {
           console.error('Error fetching room details:', error);
-          // Fallback to generating a name
-          const roomNumber = roomId?.split('-')[1] || '1';
-          setRoomName(`Gamers ${roomNumber}`);
-        } else if (data) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load room details',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        if (data) {
           setRoomName(data.name);
+          setRoomInfo(data);
         }
       } catch (error) {
         console.error('Error in room details fetch:', error);
-        const roomNumber = roomId?.split('-')[1] || '1';
-        setRoomName(`Gamers ${roomNumber}`);
       }
     };
     
@@ -89,43 +95,18 @@ const ChatRoom: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
-        // Fallback to sample messages if database fetch fails
-        const sampleMessages: Message[] = [
-          {
-            id: '1',
-            sender: 'System',
-            text: `Welcome to ${roomName || 'the chat room'}!`,
-            timestamp: new Date(Date.now() - 60000 * 15),
-            isCurrentUser: false,
-          },
-          {
-            id: '2',
-            sender: 'GameMaster42',
-            text: "Hey everyone! Who's playing the new release?",
-            timestamp: new Date(Date.now() - 60000 * 10),
-            isCurrentUser: false,
-          },
-          {
-            id: '3',
-            sender: 'PixelWarrior',
-            text: 'I am! The graphics are amazing!',
-            timestamp: new Date(Date.now() - 60000 * 5),
-            isCurrentUser: false,
-          },
-          {
-            id: '4',
-            sender: username,
-            text: 'Just joined. What game are you all talking about?',
-            timestamp: new Date(Date.now() - 60000 * 2),
-            isCurrentUser: true,
-          },
-        ];
-        
-        setMessages(sampleMessages);
+        toast({
+          title: 'Error',
+          description: 'Failed to load messages',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
     };
+    
+    // Generate random number of online users between 5 and 35
+    setOnlineUsers(Math.floor(Math.random() * 30) + 5);
     
     fetchRoomDetails();
     fetchMessages();
@@ -159,7 +140,7 @@ const ChatRoom: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [roomId, roomName]);
+  }, [roomId, toast]);
   
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !roomId) return;
@@ -187,18 +168,6 @@ const ChatRoom: React.FC = () => {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
-      
-      // Fallback: add message to local state if database insert fails
-      const newMsg: Message = {
-        id: Date.now().toString(),
-        sender: currentUser,
-        text: newMessage,
-        timestamp: new Date(),
-        isCurrentUser: true,
-      };
-      
-      setMessages([...messages, newMsg]);
-      setNewMessage('');
     }
   };
   
@@ -209,13 +178,23 @@ const ChatRoom: React.FC = () => {
     }
   };
 
+  const getHeader = () => {
+    let header = roomName;
+    if (roomInfo.province) {
+      header += ` (${roomInfo.province})`;
+    } else if (roomInfo.region) {
+      header += ` (${roomInfo.region})`;
+    }
+    return header;
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="bg-uzzap-green text-white py-2 px-4 flex justify-between items-center">
-        <h2 className="font-semibold">{roomName}</h2>
+        <h2 className="font-semibold">{getHeader()}</h2>
         <div className="text-sm">
           <span className="mr-1">●</span>
-          Online: {Math.floor(Math.random() * 30) + 5}
+          Online: {onlineUsers}
         </div>
       </div>
       
@@ -223,6 +202,10 @@ const ChatRoom: React.FC = () => {
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-uzzap-green"></div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+            No messages yet. Be the first to say hello!
           </div>
         ) : (
           <AnimatePresence>
