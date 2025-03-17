@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -67,13 +66,13 @@ const RoomList: React.FC = () => {
     
     // Group rooms by region
     roomsList.forEach(room => {
-      // Use the region field directly if available, otherwise extract from category
-      const roomRegion = room.region || (room.category ? room.category.split(' - ')[0] : '');
+      // Check if room has a valid Philippine region
+      const roomRegion = room.region || '';
       
       if (roomRegion && allRegions.includes(roomRegion)) {
         grouped[roomRegion].push(room);
       } else {
-        // Handle rooms with no region or invalid region
+        // Handle rooms with categories like "Games" that aren't Philippine regions
         grouped['Other'].push(room);
       }
     });
@@ -109,19 +108,57 @@ const RoomList: React.FC = () => {
           participants: Math.floor(Math.random() * 50) + 1
         }));
         
+        console.log('Original rooms data:', roomsWithParticipants);
+        
+        // Demo data for Philippine regions if no proper region rooms exist
+        let hasPhilippineRegions = roomsWithParticipants.some(room => 
+          room.region && allRegions.includes(room.region) && room.region !== 'Other'
+        );
+        
+        // If no rooms have Philippine regions, create sample rooms for NCR and CAR
+        if (!hasPhilippineRegions && roomsWithParticipants.length > 0) {
+          console.log('No Philippine regions found, creating sample rooms');
+          
+          // Add sample Philippine regional rooms
+          const sampleRegionalRooms = [
+            {
+              id: `sample-ncr-${Date.now()}`,
+              name: "NCR Chat",
+              participants: Math.floor(Math.random() * 50) + 1,
+              region: 'NCR',
+              province: 'Manila',
+              description: 'Chat room for National Capital Region'
+            },
+            {
+              id: `sample-car-${Date.now()}`,
+              name: "CAR Chat",
+              participants: Math.floor(Math.random() * 50) + 1,
+              region: 'CAR',
+              province: 'Benguet',
+              description: 'Chat room for Cordillera Administrative Region'
+            }
+          ];
+          
+          roomsWithParticipants.push(...sampleRegionalRooms);
+        }
+        
         setRooms(roomsWithParticipants);
         setFilteredRooms(roomsWithParticipants);
         
         // Initialize expanded state for all regions
         const initialExpandedState: Record<string, boolean> = {};
         allRegions.forEach(region => {
-          initialExpandedState[region] = false;
+          // Auto-expand regions that have rooms
+          const hasRoomsInRegion = roomsWithParticipants.some(room => room.region === region);
+          initialExpandedState[region] = hasRoomsInRegion;
         });
-        // Auto-expand the "Other" category to show non-Philippine region rooms
+        
+        // Always auto-expand the "Other" category
         initialExpandedState['Other'] = true;
+        
         setExpandedRegions(initialExpandedState);
         
-        console.log('Fetched rooms:', roomsWithParticipants);
+        console.log('Grouped rooms:', groupRoomsByRegion(roomsWithParticipants));
       } catch (error) {
         console.error('Error fetching rooms:', error);
         toast({
@@ -131,12 +168,24 @@ const RoomList: React.FC = () => {
         });
         
         // Fallback to sample data if database fetch fails
-        const sampleRooms: ChatRoom[] = Array.from({ length: 5 }, (_, i) => ({
-          id: `room-${i + 1}`,
-          name: `Gamers ${i + 1}`,
-          participants: Math.floor(Math.random() * 50) + 1,
-          region: 'NCR',
-        }));
+        const sampleRooms: ChatRoom[] = [
+          {
+            id: `sample-ncr-${Date.now()}`,
+            name: "NCR Chat",
+            participants: Math.floor(Math.random() * 50) + 1,
+            region: 'NCR',
+            province: 'Manila',
+            description: 'Chat room for National Capital Region'
+          },
+          {
+            id: `sample-car-${Date.now()}`,
+            name: "CAR Chat",
+            participants: Math.floor(Math.random() * 50) + 1,
+            region: 'CAR',
+            province: 'Benguet',
+            description: 'Chat room for Cordillera Administrative Region'
+          }
+        ];
         setRooms(sampleRooms);
         setFilteredRooms(sampleRooms);
       } finally {
