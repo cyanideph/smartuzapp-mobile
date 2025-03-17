@@ -35,7 +35,8 @@ const regionTitles = {
   'Region XI': '14. Davao Region (Region XI)',
   'Region XII': '15. SOCCSKSARGEN (Region XII)',
   'Region XIII': '16. Caraga (Region XIII)',
-  'BARMM': '17. Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'
+  'BARMM': '17. Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)',
+  'Other': 'Other Categories'
 };
 
 // Get all regions in order
@@ -59,6 +60,11 @@ const RoomList: React.FC = () => {
       grouped[region] = [];
     });
     
+    // Ensure 'Other' category exists
+    if (!grouped['Other']) {
+      grouped['Other'] = [];
+    }
+    
     // Group rooms by region
     roomsList.forEach(room => {
       // Use the region field directly if available, otherwise extract from category
@@ -68,9 +74,6 @@ const RoomList: React.FC = () => {
         grouped[roomRegion].push(room);
       } else {
         // Handle rooms with no region or invalid region
-        if (!grouped['Other']) {
-          grouped['Other'] = [];
-        }
         grouped['Other'].push(room);
       }
     });
@@ -114,7 +117,11 @@ const RoomList: React.FC = () => {
         allRegions.forEach(region => {
           initialExpandedState[region] = false;
         });
+        // Auto-expand the "Other" category to show non-Philippine region rooms
+        initialExpandedState['Other'] = true;
         setExpandedRegions(initialExpandedState);
+        
+        console.log('Fetched rooms:', roomsWithParticipants);
       } catch (error) {
         console.error('Error fetching rooms:', error);
         toast({
@@ -172,6 +179,11 @@ const RoomList: React.FC = () => {
 
   const groupedRooms = groupRoomsByRegion(filteredRooms);
 
+  // Check if we have any rooms to display
+  const hasRooms = rooms.length > 0;
+  // Check if any rooms are shown after filtering and grouping
+  const hasVisibleRooms = Object.values(groupedRooms).some(group => group.length > 0);
+
   return (
     <div className="p-3 h-full flex flex-col">
       <div className="mb-4">
@@ -187,6 +199,10 @@ const RoomList: React.FC = () => {
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-uzzap-green"></div>
+          </div>
+        ) : !hasRooms ? (
+          <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+            No chat rooms available. Create one to get started!
           </div>
         ) : (
           <motion.div
@@ -239,7 +255,7 @@ const RoomList: React.FC = () => {
               );
             })}
             
-            {filteredRooms.length === 0 && (
+            {!hasVisibleRooms && searchQuery && (
               <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                 No rooms found matching "{searchQuery}"
               </div>
