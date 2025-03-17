@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -47,7 +46,7 @@ const RoomList: React.FC = () => {
     return rooms;
   };
 
-  const groupedRooms = groupRoomsByRegion(getFilteredRoomsByTab());
+  const groupedRooms = groupRoomsByRegion();
 
   return (
     <div className="p-3 h-full flex flex-col">

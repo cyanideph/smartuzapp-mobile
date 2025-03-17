@@ -4,7 +4,7 @@ import { ChevronDown, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RoomItem from './RoomItem';
 import { ChatRoom, regionTitles } from '@/types/chatRoom';
-import { Badge } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 interface RegionGroupProps {
   region: string;

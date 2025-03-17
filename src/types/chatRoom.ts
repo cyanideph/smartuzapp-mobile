@@ -9,6 +9,7 @@ export interface ChatRoom {
   description?: string | null;
   created_at?: string;
   updated_at?: string;
+  hasActivity?: boolean; // Add this property
 }
 
 export const regionTitles: Record<string, string> = {
