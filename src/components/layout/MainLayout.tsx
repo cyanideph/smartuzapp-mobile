@@ -1,9 +1,12 @@
+
 import React, { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import UzzapLogo from '../logo/UzzapLogo';
 import ThemeToggle from '@/components/theme/ThemeToggle';
+import { User, Settings, ChevronLeft, Home, Menu } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -28,7 +31,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   };
   
   const handleOptions = () => {
-    // Options functionality would go here
+    navigate('/settings');
   };
   
   const handleHome = () => {
@@ -38,7 +41,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       {showHeader && (
         <motion.header 
           className="sticky top-0 z-10 bg-gradient-to-r from-uzzap-darkGreen to-uzzap-green p-3 shadow-md"
@@ -55,16 +58,50 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   onClick={handleBack}
                   className="mr-2 text-white hover:bg-uzzap-darkGreen hover:text-white"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
               )}
-              <UzzapLogo size="sm" showBeta={true} />
-              <ThemeToggle />
+              <div className="cursor-pointer" onClick={handleHome}>
+                <UzzapLogo size="sm" showBeta={true} />
+              </div>
             </div>
             {title && (
               <h1 className="text-lg font-semibold text-white ml-2">{title}</h1>
             )}
-            <div className="flex-1"></div>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/profile')}
+                className="rounded-full w-8 h-8 text-white hover:bg-uzzap-darkGreen"
+              >
+                <User className="h-4 w-4" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full w-8 h-8 text-white hover:bg-uzzap-darkGreen"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </motion.header>
       )}
@@ -90,7 +127,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             className="text-white hover:bg-gray-800"
             onClick={handleOptions}
           >
-            Options
+            <Settings className="h-5 w-5" />
+            <span className="ml-1 text-xs">Options</span>
           </Button>
           
           <Button 
@@ -98,14 +136,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             className="text-white hover:bg-gray-800"
             onClick={handleHome}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <Home className="h-5 w-5" />
+            <span className="ml-1 text-xs">Home</span>
           </Button>
           
           <Button 
             variant="ghost" 
             className="text-white hover:bg-gray-800"
+            onClick={() => navigate('/buddies')}
           >
-            Hide
+            <User className="h-5 w-5" />
+            <span className="ml-1 text-xs">Buddies</span>
           </Button>
         </motion.footer>
       )}

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import MenuButton from '@/components/home/MenuButton';
 import NavButton from '@/components/navigation/NavButton';
-import { MessageSquare, User, Users, Globe } from 'lucide-react';
+import { MessageSquare, User, Users, Globe, Settings, Plus, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -32,19 +32,23 @@ const Home: React.FC = () => {
       title: "Communication",
       items: [
         { icon: Users, label: "Buddies", onClick: () => navigate('/buddies') },
-        { icon: MessageSquare, label: "Messaging", onClick: () => navigate('/messages') },
+        { icon: UserPlus, label: "Add Buddy", onClick: () => navigate('/add-buddy') },
+        { icon: MessageSquare, label: "Messages", onClick: () => navigate('/messages') },
         { icon: Users, label: "Chatrooms", onClick: () => navigate('/chatrooms') },
+        { icon: Plus, label: "Create Room", onClick: () => navigate('/create-chatroom') },
         { icon: Globe, label: "Connections", onClick: () => navigate('/connections') },
       ]
     },
     {
-      title: "Features",
+      title: "Account",
       items: [
         { icon: User, label: "Profile", onClick: () => navigate('/profile') },
+        { icon: Settings, label: "Settings", onClick: () => navigate('/settings') },
         { icon: MessageSquare, label: "Status", onClick: () => {
+          const status = localStorage.getItem('uzzap_status') || 'online';
           toast({
             title: "Status updated",
-            description: "Your status has been set to online.",
+            description: `Your status has been set to ${status}.`,
           });
         }},
       ]
@@ -83,7 +87,7 @@ const Home: React.FC = () => {
           >
             {menuCategories.map((category, idx) => (
               <motion.div key={idx} variants={item} className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-800">{category.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{category.title}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {category.items.map((menuItem, i) => (
                     <MenuButton
@@ -99,12 +103,12 @@ const Home: React.FC = () => {
           </motion.div>
         </div>
         
-        <div className="border-t border-gray-200 p-2 bg-white grid grid-cols-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-2 bg-white dark:bg-gray-800 grid grid-cols-4">
           <NavButton
             icon={User}
             label="Profile"
             active={activeTab === 'profile'}
-            onClick={() => handleTabChange('profile')}
+            onClick={() => navigate('/profile')}
           />
           <NavButton
             icon={Users}
@@ -119,10 +123,10 @@ const Home: React.FC = () => {
             onClick={() => navigate('/chatrooms')}
           />
           <NavButton
-            icon={Globe}
-            label="Explore"
-            active={activeTab === 'explore'}
-            onClick={() => handleTabChange('explore')}
+            icon={Settings}
+            label="Settings"
+            active={activeTab === 'settings'}
+            onClick={() => navigate('/settings')}
           />
         </div>
       </div>
