@@ -22,6 +22,16 @@ const RegionGroup: React.FC<RegionGroupProps> = ({
 }) => {
   if (rooms.length === 0) return null;
   
+  const container = {
+    hidden: { opacity: 0 },
+    show: { 
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
   const item = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 }
@@ -41,13 +51,18 @@ const RegionGroup: React.FC<RegionGroupProps> = ({
       </div>
       
       {isExpanded && (
-        <div className="pl-6 mt-1 space-y-1">
+        <motion.div 
+          className="pl-6 mt-1 space-y-1"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
           {rooms.map((room) => (
             <motion.div key={room.id} variants={item}>
               <RoomItem room={room} onClick={onRoomClick} />
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

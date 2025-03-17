@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChatRoom } from '@/types/chatRoom';
+import OnlineIndicator from './OnlineIndicator';
 
 interface RoomItemProps {
   room: ChatRoom;
@@ -18,7 +19,7 @@ const RoomItem: React.FC<RoomItemProps> = ({ room, onClick }) => {
       onClick={() => onClick(room.id)}
     >
       <div className="flex items-center">
-        <div className="w-3 h-3 rounded-full bg-uzzap-green mr-2 animate-pulse-light"></div>
+        <OnlineIndicator className="mr-2" />
         <span className="font-medium dark:text-white">{room.name}</span>
         {room.province && (
           <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({room.province})</span>

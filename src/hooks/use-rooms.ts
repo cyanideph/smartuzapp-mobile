@@ -60,13 +60,60 @@ export const useRooms = () => {
     };
 
     fetchRooms();
+
+    // Set up real-time subscription for chat_rooms table
+    const channel = supabase
+      .channel('chat_rooms_changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'chat_rooms'
+      }, (payload) => {
+        console.log('Chat rooms change received:', payload);
+        
+        // Handle different types of changes
+        if (payload.eventType === 'INSERT') {
+          const newRoom = {
+            ...(payload.new as ChatRoom),
+            participants: Math.floor(Math.random() * 50) + 1
+          };
+          
+          setRooms(prev => [...prev, newRoom]);
+          
+          // Expand the region if it's the first room in this region
+          if (newRoom.region) {
+            setExpandedRegions(prev => ({
+              ...prev,
+              [newRoom.region!]: true
+            }));
+          }
+        } 
+        else if (payload.eventType === 'UPDATE') {
+          setRooms(prev => prev.map(room => 
+            room.id === payload.new.id ? {...payload.new as ChatRoom, participants: room.participants} : room
+          ));
+        }
+        else if (payload.eventType === 'DELETE') {
+          setRooms(prev => prev.filter(room => room.id !== payload.old.id));
+        }
+      })
+      .subscribe((status) => {
+        console.log('Chat rooms subscription status:', status);
+      });
+    
+    // Clean up subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [toast]);
   
   // Filter rooms based on search query
   useEffect(() => {
     if (searchQuery) {
       const filtered = rooms.filter(room => 
-        room.name.toLowerCase().includes(searchQuery.toLowerCase())
+        room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (room.province && room.province.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (room.region && room.region.toLowerCase().includes(searchQuery.toLowerCase()))
       );
       setFilteredRooms(filtered);
     } else {
