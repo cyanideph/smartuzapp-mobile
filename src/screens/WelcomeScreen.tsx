@@ -34,7 +34,7 @@ const WelcomeScreen = () => {
     { 
       id: 'login', 
       label: 'Login to Network', 
-      onPress: () => navigation.navigate('Login') 
+      onPress: () => navigation.navigate('Login')
     },
     { 
       id: 'register', 
