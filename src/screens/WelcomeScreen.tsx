@@ -7,12 +7,9 @@ import {
   TouchableOpacity, 
   SafeAreaView,
   useColorScheme,
-  Animated,
-  Platform,
-  Pressable
+  Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Placeholder for logo component
 const UzzapLogo = ({ size = "lg", showBeta = true }) => {
@@ -35,12 +32,36 @@ const WelcomeScreen = () => {
   };
 
   const menuOptions = [
-    { id: 'login', label: 'Login to Network', onPress: () => console.log('Login pressed') },
-    { id: 'register', label: 'Register a New Account', onPress: () => console.log('Register pressed') },
-    { id: 'forgot', label: 'Forgotten ID/Password', onPress: () => console.log('Forgot password pressed') },
-    { id: 'help', label: 'Help', onPress: () => console.log('Help pressed') },
-    { id: 'about', label: 'About Uzzap', onPress: () => console.log('About pressed') },
-    { id: 'exit', label: 'Exit Application', onPress: () => console.log('Exit pressed') },
+    { 
+      id: 'login', 
+      label: 'Login to Network', 
+      onPress: () => navigation.navigate('Login') 
+    },
+    { 
+      id: 'register', 
+      label: 'Register a New Account', 
+      onPress: () => console.log('Register pressed') 
+    },
+    { 
+      id: 'forgot', 
+      label: 'Forgotten ID/Password', 
+      onPress: () => console.log('Forgot password pressed') 
+    },
+    { 
+      id: 'help', 
+      label: 'Help', 
+      onPress: () => console.log('Help pressed') 
+    },
+    { 
+      id: 'about', 
+      label: 'About Uzzap', 
+      onPress: () => console.log('About pressed') 
+    },
+    { 
+      id: 'exit', 
+      label: 'Exit Application', 
+      onPress: () => Platform.OS === 'web' ? window.close() : console.log('Exit pressed') 
+    },
   ];
 
   const backgroundColor = theme === 'dark' ? '#121212' : '#f5f5f5';

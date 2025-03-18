@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import screens
 import WelcomeScreen from './src/screens/WelcomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import HomeScreen from './src/screens/HomeScreen';
 
 // Create navigation stack
 const Stack = createNativeStackNavigator();
@@ -36,7 +38,21 @@ export default function App() {
               headerShown: false
             }}
           />
-          {/* Additional screens will be added here */}
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen} 
+            options={{ 
+              title: 'Login to Network'
+            }}
+          />
+          <Stack.Screen 
+            name="Home" 
+            component={HomeScreen} 
+            options={{ 
+              title: 'Home',
+              headerShown: false
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />
