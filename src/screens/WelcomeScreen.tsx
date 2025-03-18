@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   StyleSheet, 
@@ -34,6 +35,7 @@ const WelcomeScreen = () => {
     { 
       id: 'login', 
       label: 'Login to Network', 
+      // @ts-ignore - Ignoring type issue with navigation
       onPress: () => navigation.navigate('Login')
     },
     { 

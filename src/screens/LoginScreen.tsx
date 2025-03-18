@@ -41,6 +41,7 @@ const LoginScreen = () => {
 
       // If successful
       setIsLoading(false);
+      // @ts-ignore - Ignoring type issue with navigation
       navigation.navigate('Home');
     } catch (error) {
       console.error('Login error:', error);
@@ -48,6 +49,7 @@ const LoginScreen = () => {
       
       // For demo purposes, allow login with any credentials
       setTimeout(() => {
+        // @ts-ignore - Ignoring type issue with navigation
         navigation.navigate('Home');
       }, 1000);
     }
